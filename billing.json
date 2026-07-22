@@ -1,0 +1,114 @@
+{
+  "$schema": "https://clerk.com/schemas/billing.json",
+  "version": "1.0",
+  "billing": {
+    "user_enabled": true,
+    "organization_enabled": false,
+    "currency": "usd",
+    "features": [
+      {
+        "slug": "basic_editor",
+        "name": "Basic Editor",
+        "description": "Basic image and video editing tools"
+      },
+      {
+        "slug": "image_ai",
+        "name": "AI Image Generation",
+        "description": "AI image generation and manipulation tools"
+      },
+      {
+        "slug": "advanced_image",
+        "name": "Advanced Image Tools",
+        "description": "Advanced image filters, background removal, and enhancements"
+      },
+      {
+        "slug": "advanced_video",
+        "name": "Advanced Video Tools",
+        "description": "Advanced video editing, multi-track trimming, and HD rendering"
+      },
+      {
+        "slug": "audio_extraction",
+        "name": "Audio Extraction",
+        "description": "Extract and download audio tracks from video files"
+      },
+      {
+        "slug": "subtitle_overlay",
+        "name": "Subtitle Overlay",
+        "description": "Automatic subtitle generation and custom subtitle overlays"
+      }
+    ],
+    "plans": [
+      {
+        "slug": "free",
+        "name": "Free",
+        "description": "Free plan with basic editing capabilities",
+        "payer_type": "user",
+        "prices": [
+          {
+            "currency": "usd",
+            "amount": 0,
+            "interval": "month",
+            "display_amount": "$0/month"
+          }
+        ],
+        "features": [
+          "basic_editor"
+        ]
+      },
+      {
+        "slug": "pro",
+        "name": "Pro",
+        "description": "Pro plan for creators with AI tools and advanced media editing",
+        "payer_type": "user",
+        "prices": [
+          {
+            "currency": "usd",
+            "amount": 1500,
+            "interval": "month",
+            "display_amount": "$15/month"
+          },
+          {
+            "currency": "usd",
+            "amount": 15000,
+            "interval": "year",
+            "display_amount": "$150/year"
+          }
+        ],
+        "features": [
+          "basic_editor",
+          "image_ai",
+          "advanced_image",
+          "advanced_video"
+        ]
+      },
+      {
+        "slug": "ultra",
+        "name": "Ultra",
+        "description": "Ultra plan with full features including audio extraction and subtitle overlays",
+        "payer_type": "user",
+        "prices": [
+          {
+            "currency": "usd",
+            "amount": 3000,
+            "interval": "month",
+            "display_amount": "$30/month"
+          },
+          {
+            "currency": "usd",
+            "amount": 30000,
+            "interval": "year",
+            "display_amount": "$300/year"
+          }
+        ],
+        "features": [
+          "basic_editor",
+          "image_ai",
+          "advanced_image",
+          "advanced_video",
+          "audio_extraction",
+          "subtitle_overlay"
+        ]
+      }
+    ]
+  }
+}
