@@ -126,7 +126,7 @@ npx clerk login
 Test the configuration patch against your Clerk environment without saving changes:
 
 ```bash
-npx clerk config patch --file billing.json --dry-run
+npx clerk config patch --file .agents/docs/billing.json --dry-run
 ```
 
 ### Step 4: Patch Configuration to Clerk
@@ -134,13 +134,13 @@ npx clerk config patch --file billing.json --dry-run
 Apply the configuration to your active development instance:
 
 ```bash
-npx clerk config patch --file billing.json
+npx clerk config patch --file .agents/docs/billing.json
 ```
 
 To target production explicitly:
 
 ```bash
-npx clerk config patch --file billing.json --instance prod
+npx clerk config patch --file .agents/docs/billing.json --instance prod
 ```
 
 ---

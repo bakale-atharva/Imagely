@@ -240,7 +240,10 @@ export function validateBillingConfig(filePath: string): boolean {
 function main() {
   const args = process.argv.slice(2);
   const fileArgIdx = args.indexOf('--file');
-  const targetFile = fileArgIdx !== -1 ? args[fileArgIdx + 1] : path.resolve(process.cwd(), 'billing.json');
+  const defaultPath = fs.existsSync(path.resolve(process.cwd(), '.agents/docs/billing.json'))
+    ? path.resolve(process.cwd(), '.agents/docs/billing.json')
+    : path.resolve(process.cwd(), 'billing.json');
+  const targetFile = fileArgIdx !== -1 ? args[fileArgIdx + 1] : defaultPath;
 
   const isValid = validateBillingConfig(targetFile);
 
@@ -262,9 +265,9 @@ function main() {
     }
   } else {
     console.log('💡 To preview changes with Clerk CLI:');
-    console.log(`   npx clerk config patch --file billing.json --dry-run`);
+    console.log(`   npx clerk config patch --file .agents/docs/billing.json --dry-run`);
     console.log('💡 To apply changes with Clerk CLI:');
-    console.log(`   npx clerk config patch --file billing.json\n`);
+    console.log(`   npx clerk config patch --file .agents/docs/billing.json\n`);
   }
 }
 

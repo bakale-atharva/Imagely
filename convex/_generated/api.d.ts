@@ -8,7 +8,8 @@
  * @module
  */
 
-import type * as myFunctions from "../myFunctions.js";
+import type * as assetFamilies from "../assetFamilies.js";
+import type * as assetVersions from "../assetVersions.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +18,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  myFunctions: typeof myFunctions;
+  assetFamilies: typeof assetFamilies;
+  assetVersions: typeof assetVersions;
 }>;
 
 /**

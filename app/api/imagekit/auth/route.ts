@@ -15,9 +15,10 @@ export async function GET(request: Request) {
 
     const params = getImageKitUploadParams({ userId, mediaType });
     return NextResponse.json(params);
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to generate ImageKit upload parameters';
     return NextResponse.json(
-      { error: error?.message || 'Failed to generate ImageKit upload parameters' },
+      { error: message },
       { status: 500 }
     );
   }
@@ -45,9 +46,10 @@ export async function POST(request: Request) {
 
     const params = getImageKitUploadParams({ userId, mediaType });
     return NextResponse.json(params);
-  } catch (error: any) {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to generate ImageKit upload parameters';
     return NextResponse.json(
-      { error: error?.message || 'Failed to generate ImageKit upload parameters' },
+      { error: message },
       { status: 500 }
     );
   }
