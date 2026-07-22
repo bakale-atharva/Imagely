@@ -1,55 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import UploadModal from "@/components/UploadModal";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 type MediaTypeFilter = "all" | "image" | "video";
+
+function AssetThumbnail({ path, fallback }: { path: string, fallback: React.ReactNode }) {
+  const [data, setData] = useState<{ url: string; srcset: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/media/sign-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, widths: [240, 320, 480, 640, 960] }),
+    })
+      .then((res) => res.json())
+      .then((d) => setData(d))
+      .catch((err) => console.error(err));
+  }, [path]);
+
+  if (!data) return <>{fallback}</>;
+
+  return (
+    <img
+      src={data.url}
+      srcSet={data.srcset}
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+      loading="lazy"
+      alt="Thumbnail"
+      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+    />
+  );
+}
 
 export default function GalleryPage() {
   const [activeTab, setActiveTab] = useState<MediaTypeFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
-  // Initial asset families (demo items for rich visual preview & testability)
-  const [assets] = useState([
-    {
-      id: "asset-demo-1",
-      name: "Neon Studio Portrait",
-      type: "image" as const,
-      versionCount: 3,
-      updatedAt: "2 hours ago",
-      dimensions: "1920x1080",
-    },
-    {
-      id: "asset-demo-2",
-      name: "Cinematic Reel",
-      type: "video" as const,
-      versionCount: 2,
-      updatedAt: "5 hours ago",
-      dimensions: "4K 60fps",
-    },
-    {
-      id: "asset-demo-3",
-      name: "Brand Mark & Logo",
-      type: "image" as const,
-      versionCount: 1,
-      updatedAt: "1 day ago",
-      dimensions: "1280x720",
-    },
-    {
-      id: "asset-demo-4",
-      name: "Product Promo Video",
-      type: "video" as const,
-      versionCount: 4,
-      updatedAt: "2 days ago",
-      dimensions: "1080p 30fps",
-    },
-  ]);
+  const paginatedResult = useQuery(api.assetFamilies.listPaginatedAssetFamilies, {
+    mediaKind: activeTab === "all" ? undefined : activeTab,
+    paginationOpts: { numItems: 24, cursor: null },
+  });
+
+  const isLoading = paginatedResult === undefined;
+  const assets = paginatedResult?.page || [];
 
   const filteredAssets = assets.filter((asset) => {
-    if (activeTab !== "all" && asset.type !== activeTab) return false;
-    if (searchQuery && !asset.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    if (searchQuery && !asset.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   });
 
@@ -72,15 +73,8 @@ export default function GalleryPage() {
         {/* Action Controls */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsLoading(!isLoading)}
-            className="text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
-            title="Toggle Skeleton Loading Demo"
-          >
-            {isLoading ? "Show Assets" : "Simulate Loading"}
-          </button>
-          <button
             id="gallery-upload-btn"
-            onClick={() => setIsUploading(!isUploading)}
+            onClick={() => setIsUploadModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl font-semibold bg-[#ff6b4a] hover:bg-[#e55a39] text-white shadow-md shadow-[#ff6b4a]/20 transition-all active:scale-95 cursor-pointer text-xs sm:text-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -151,30 +145,11 @@ export default function GalleryPage() {
         </div>
       </div>
 
-      {/* Upload Dropzone Overlay */}
-      {isUploading && (
-        <div
-          id="gallery-upload-dropzone-placeholder"
-          className="p-8 rounded-2xl border-2 border-dashed border-[#ff6b4a]/50 bg-[#ff6b4a]/5 text-center space-y-4 animate-fadeIn"
-        >
-          <div className="w-12 h-12 rounded-full bg-[#ff6b4a]/10 border border-[#ff6b4a]/30 flex items-center justify-center mx-auto text-[#ff6b4a]">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-200">Upload Media Asset</h3>
-            <p className="text-xs text-slate-400 mt-1">Drag and drop images (PNG, JPG, WEBP) or videos (MP4, MOV) here</p>
-          </div>
-          <button
-            id="gallery-upload-cancel-btn"
-            onClick={() => setIsUploading(false)}
-            className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-medium cursor-pointer"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
+      {/* Upload Modal */}
+      <UploadModal 
+        isOpen={isUploadModalOpen} 
+        onClose={() => setIsUploadModalOpen(false)} 
+      />
 
       {/* Loading Skeletons */}
       {isLoading && (
@@ -196,14 +171,14 @@ export default function GalleryPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredAssets.map((asset) => (
             <div
-              key={asset.id}
+              key={asset._id}
               className="group relative rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-[#ff6b4a]/50 transition-all duration-300 overflow-hidden flex flex-col justify-between hover:shadow-xl hover:shadow-[#ff6b4a]/5"
             >
               {/* Thumbnail Container */}
               <div className="relative w-full h-44 bg-slate-950 flex items-center justify-center overflow-hidden border-b border-slate-800/60">
                 {/* Media-type Icon Badge */}
                 <div className="absolute top-3 left-3 z-10 flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-800 backdrop-blur-md text-[10px] text-slate-300">
-                  {asset.type === "image" ? (
+                  {asset.mediaKind === "image" ? (
                     <svg className="w-3 h-3 text-[#ff6b4a]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -212,38 +187,39 @@ export default function GalleryPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   )}
-                  <span className="capitalize font-medium">{asset.type}</span>
+                  <span className="capitalize font-medium">{asset.mediaKind}</span>
                 </div>
 
                 {/* Version Badge */}
                 <div className="absolute top-3 right-3 z-10 px-2 py-0.5 rounded-full bg-[#ff6b4a]/15 text-[#ff6b4a] border border-[#ff6b4a]/30 font-mono text-[10px] font-bold">
-                  V{asset.versionCount}
+                  V{asset.currentVersionNumber}
                 </div>
 
                 {/* ImageKit Responsive Thumbnail Mock / Illustration */}
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 group-hover:scale-105 transition-transform duration-500">
-                  <div className="text-center p-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-500 group-hover:border-[#ff6b4a]/40 group-hover:text-[#ff6b4a] transition-colors">
-                      {asset.type === "image" ? (
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      ) : (
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      )}
+                <AssetThumbnail path={asset.imageKitPath} fallback={
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 group-hover:scale-105 transition-transform duration-500">
+                    <div className="text-center p-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-center mx-auto mb-2 text-slate-500 group-hover:border-[#ff6b4a]/40 group-hover:text-[#ff6b4a] transition-colors">
+                        {asset.mediaKind === "image" ? (
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-mono">{asset.dimensions}</span>
                   </div>
-                </div>
+                } />
 
                 {/* Subtle Hover Action Overlay */}
                 <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4 z-20">
                   <Link
-                    href={asset.type === "image" ? "/editor/image" : "/editor/video"}
-                    id={`gallery-card-open-${asset.id}`}
+                    href={asset.mediaKind === "image" ? `/editor/image?id=${asset._id}` : `/editor/video?id=${asset._id}`}
+                    id={`gallery-card-open-${asset._id}`}
                     className="px-4 py-2 rounded-xl bg-[#ff6b4a] hover:bg-[#e55a39] text-white text-xs font-semibold shadow-lg shadow-[#ff6b4a]/30 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
                   >
                     Open in Editor
@@ -255,12 +231,12 @@ export default function GalleryPage() {
               <div className="p-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-xs sm:text-sm font-bold text-slate-100 line-clamp-1 group-hover:text-[#ff6b4a] transition-colors">
-                    {asset.name}
+                    {asset.title}
                   </h3>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Updated {asset.updatedAt}</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Created {new Date(asset._creationTime).toLocaleDateString()}</p>
                 </div>
                 <span className="text-[10px] font-mono text-slate-400 bg-slate-950 border border-slate-800 px-2 py-0.5 rounded-md">
-                  V{asset.versionCount}
+                  V{asset.currentVersionNumber}
                 </span>
               </div>
             </div>
@@ -288,6 +264,13 @@ export default function GalleryPage() {
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setIsUploadModalOpen(true)}
+              id="gallery-empty-upload-btn"
+              className="px-5 py-2.5 rounded-xl font-semibold bg-slate-800 hover:bg-slate-700 text-white text-xs transition-all cursor-pointer shadow-md shadow-slate-900/20"
+            >
+              Upload Asset
+            </button>
             <Link
               href="/editor/image"
               id="gallery-empty-launch-image-btn"

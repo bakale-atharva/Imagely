@@ -128,3 +128,71 @@ export function getSignedMediaUrl({
   const delimiter = relativePath.includes('?') ? '&' : '?';
   return `${baseEndpoint}${relativePath}${delimiter}ik-e=${ikE}&ik-s=${ikS}`;
 }
+
+export interface GetSignedResponsiveSrcSetOptions {
+  path: string;
+  recipe?: Recipe;
+  widths?: number[];
+}
+
+export function getSignedResponsiveSrcSet({
+  path,
+  recipe,
+  widths = [240, 320, 480, 640, 960],
+}: GetSignedResponsiveSrcSetOptions): string {
+  return widths
+    .map((width) => {
+      let trString = `w-${width},q-auto,f-auto`;
+      if (recipe) {
+        const valResult = validateRecipe(recipe);
+        if (valResult.valid && valResult.normalizedRecipe) {
+          const recipeTr = formatRecipeToTransformation(valResult.normalizedRecipe);
+          if (recipeTr) {
+            trString = `${trString}:${recipeTr}`;
+          }
+        }
+      }
+      const signedUrl = getSignedMediaUrl({
+        path,
+        transformation: trString,
+      });
+      return `${signedUrl} ${width}w`;
+    })
+    .join(', ');
+}
+
+export interface GetSignedCanvasUrlOptions {
+  path: string;
+  recipe?: Recipe;
+  containerWidth?: number;
+  dpr?: number;
+  maxDimensions: { width: number; height: number };
+}
+
+export function getSignedCanvasUrl({
+  path,
+  recipe,
+  containerWidth,
+  dpr,
+  maxDimensions,
+}: GetSignedCanvasUrlOptions): string {
+  const cWidth = containerWidth || 800;
+  const dRatio = dpr || 1;
+  const targetWidth = Math.min(maxDimensions.width, Math.round(cWidth * dRatio));
+
+  let trString = `w-${targetWidth},q-auto,f-auto`;
+  if (recipe) {
+    const valResult = validateRecipe(recipe);
+    if (valResult.valid && valResult.normalizedRecipe) {
+      const recipeTr = formatRecipeToTransformation(valResult.normalizedRecipe);
+      if (recipeTr) {
+        trString = `${trString}:${recipeTr}`;
+      }
+    }
+  }
+
+  return getSignedMediaUrl({
+    path,
+    transformation: trString,
+  });
+}

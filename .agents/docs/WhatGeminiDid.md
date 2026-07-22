@@ -100,14 +100,64 @@ This document tracks all completed phases, architectural implementations, and ve
 
 ---
 
+## 📌 Phase 2 — Private Upload & Paginated Gallery
+
+**Status**: ✅ Completed & Verified
+
+### Key Deliverables & Achievements
+
+1. **Private Media Upload Modal & ImageKit Integration**
+   - Created [`components/UploadModal.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/components/UploadModal.tsx):
+     - Interactive dark-themed upload dropzone with drag-and-drop & file browser support.
+     - Enforces client-side file size and format limits (20MB max for PNG/JPG/WEBP/GIF/SVG images; 100MB max for MP4/MOV/WEBM videos).
+     - Obtains short-lived upload parameters from `/api/imagekit/auth` and uploads directly to ImageKit with real-time progress indicators (0-100%).
+     - Enforces user-isolated folder paths `/users/{clerkUserId}/images/` and `/users/{clerkUserId}/videos/`.
+     - Automatically creates V1 of a new asset family via Convex `createAssetFamilyWithV1` mutation upon completion.
+
+2. **Paginated Gallery with Signed Responsive Thumbnails**
+   - Updated [`app/gallery/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/gallery/page.tsx):
+     - Connected to live Convex `listPaginatedAssetFamilies` query.
+     - Added media type filter tabs ("All", "Images Only", "Videos Only") and real-time client title search.
+     - Integrated `AssetThumbnail` component to fetch HMAC-SHA1 signed ImageKit URLs and responsive `srcset` candidate ladders (`240, 320, 480, 640, 960` widths).
+     - Displayed asset cards with media type badges, version tags (`V{n}`), responsive imagery, and hover action buttons routing to `/editor/${mediaKind}?id=${familyId}`.
+     - Rendered dark skeleton loading states and empty state UI with direct trigger to `UploadModal`.
+
+---
+
+## 📌 Phase 2.5 — ImageKit-Backed Versioning & Responsive Delivery
+
+**Status**: ✅ Completed & Verified
+
+### Key Deliverables & Achievements
+
+1. **Signed Media Delivery & Canvas URL Helpers**
+   - Expanded [`lib/imagekit.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/lib/imagekit.ts):
+     - Added `getSignedResponsiveSrcSet`: Generates signed ImageKit `srcset` ladders with `tr:w-{width},q-auto,f-auto` transformations.
+     - Added `getSignedCanvasUrl`: Computes target width based on rendered container width × DPR (capped by version dimensions) and generates signed preview URLs.
+   - Created API endpoint [`app/api/media/sign-url/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/sign-url/route.ts) secured with Clerk `auth()`.
+
+2. **Studio Workspace Versioning & Timeline Linage**
+   - Updated [`app/editor/image/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/editor/image/page.tsx) & [`app/editor/video/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/editor/video/page.tsx):
+     - Integrated URL parameter navigation `?id={familyId}` with Convex queries `getAssetFamily` and `listAssetVersions`.
+     - Displayed chronological version history rail in left inspector and interactive version timeline track at bottom.
+     - Added visual indicators for selected version, parent version lineage, and draft edits.
+     - Connected **Create version** CTA to Convex `createAssetVersion` mutation, materializing inspector edits into immutable database version records (V1 → V2 → V3).
+
+3. **Validation & Quality Assurance**
+   - Created comprehensive validation script [`scripts/validate-phase2.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/scripts/validate-phase2.ts): **100% PASSED**
+   - Ran `npx tsc --noEmit`: **100% PASSED (0 errors)**
+
+---
+
 ## 📌 Phase Progress Tracker
 
 - [x] **Phase 0**: External Services (Clerk Billing & ImageKit Integration)
 - [x] **Phase 1**: Studio Shell & Owned Convex Data Schema
 - [x] **Visual Rebrand**: Full DESIGN.md Dark Slate & Coral Rebrand
-- [ ] **Phase 2**: Private Upload & Paginated Gallery
-- [ ] **Phase 2.5**: ImageKit-Backed Versioning & Responsive Delivery
+- [x] **Phase 2**: Private Upload & Paginated Gallery
+- [x] **Phase 2.5**: ImageKit-Backed Versioning & Responsive Delivery
 - [ ] **Phase 3**: Non-Destructive Image & Video Editors
 - [ ] **Phase 4**: Billing Gates & Entitlement Enforcement
 - [ ] **Phase 5**: End-to-End Verification & Release Readiness
+
 
