@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'path is required and must be a string' }, { status: 400 });
     }
 
+    const expectedUserPrefix = `/users/${userId}/`;
+    if (!path.startsWith(expectedUserPrefix)) {
+      return NextResponse.json({ error: 'Forbidden: Path does not belong to authenticated user' }, { status: 403 });
+    }
+
     let url = '';
     let srcset: string | undefined = undefined;
 

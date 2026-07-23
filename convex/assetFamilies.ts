@@ -24,7 +24,7 @@ export const listPaginatedAssetFamilies = query({
         .withIndex("by_owner_and_mediaKind", (q) =>
           q
             .eq("ownerTokenIdentifier", identity.tokenIdentifier)
-            .eq("mediaKind", args.mediaKind!)
+            .eq("mediaKind", args.mediaKind!),
         )
         .order("desc")
         .paginate(args.paginationOpts);
@@ -33,7 +33,7 @@ export const listPaginatedAssetFamilies = query({
     return await ctx.db
       .query("assetFamilies")
       .withIndex("by_owner", (q) =>
-        q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier),
       )
       .order("desc")
       .paginate(args.paginationOpts);

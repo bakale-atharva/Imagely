@@ -149,6 +149,51 @@ This document tracks all completed phases, architectural implementations, and ve
 
 ---
 
+## 📌 Phase 3 — Non-Destructive Image & Video Editors
+
+**Status**: ✅ Completed & Verified
+
+### Key Deliverables & Subagent Architecture
+
+1. **Expanded Backend Recipe Engine & Export Endpoints**
+   - Updated [`lib/recipe.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/lib/recipe.ts):
+     - Expanded `Recipe` interface, validation, and `formatRecipeToTransformation` generator to cover Free, Pro, and Ultra features across Image and Video media.
+     - Supported `bgRemove`, `textOverlay`, `colorOverlay`, `blur`, `watermark`, `startSeconds` (`so`), `endSeconds` (`eo`), `duration` (`du`), `mute`, `extractAudio` (`f-mp3`), and `subtitleUrl`.
+   - Secured [`app/api/media/sign-url/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/sign-url/route.ts):
+     - Enforced server-side path ownership isolation `/users/${userId}/...`.
+   - Created [`app/api/media/export/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/export/route.ts):
+     - Authenticated server route generating high-resolution signed download URLs (`ik-attachment=true`) with user ownership verification.
+
+2. **Image Editor Studio Workspace (`app/editor/image/page.tsx`)**
+   - Dispatched **Image Editor Engineer** subagent (`9c803ba0-89d9-44b1-8954-d099a70f237a`).
+   - Built 3-pane layout: 340px Left Inspector, flexible Preview Stage (`#090d16`), and 240px Bottom Version Timeline Track.
+   - Tool Inspector Tabs:
+     - **Adjust (Free)**: Brightness, Contrast, Saturation, Quality, Format selection (`auto`, `webp`, `png`, `jpg`, `avif`).
+     - **Transform (Free)**: Aspect ratio presets (`1:1`, `16:9`, `4:3`, `9:16`, `Freeform`), Width/Height inputs, Rotation (`0°`, `90°`, `180°`, `270°`), Crop mode selection.
+     - **AI & Pro (Pro)**: Background removal toggle (`bgRemove`), Text overlay, Watermark overlay, Blur slider.
+   - Entitlement gating: Displays `PRO` badges on locked tools. Clicking locked tools opens the Upgrade Modal with link to `/pricing`.
+   - Live Canvas Preview with zoom controls (25% to 200% & reset) and signed URL fetching.
+   - Version materialization: Dashed "Draft" version card for unsaved inspector edits and single primary coral CTA button **Create version**.
+   - Asset Export Modal connected to `/api/media/export`.
+
+3. **Video Editor Studio Workspace (`app/editor/video/page.tsx`)**
+   - Dispatched **Video Editor Engineer** subagent (`760dce5c-ea04-42a0-827d-ed47f5d521e0`).
+   - Built 3-pane layout: 340px Left Inspector, central Video Preview Stage, and 260px Bottom Multi-Track Timeline.
+   - Tool Inspector Tabs:
+     - **Basic Video (Free)**: Trim start/end times (`startSeconds`, `endSeconds`), Mute audio toggle (`mute`), Format (`mp4`, `webm`), Quality slider, Thumbnail frame picker.
+     - **Advanced (Pro)**: Aspect Ratio presets (`16:9`, `9:16`, `1:1`, `4:5`), Rotation (`0°`, `90°`, `180°`, `270°`), Watermark overlay — with `PRO` badges.
+     - **Audio & Subtitles (Ultra)**: Audio extraction toggle (`extractAudio`), Subtitle file overlay (`subtitleUrl`) — with `ULTRA` badges.
+   - Animated dark charcoal "Processing video transform..." state overlay during video loading / calculation.
+   - Multi-Track Timeline: Time ruler (`00:00`, `00:15`...), red/coral playhead tracking live playback, Track 1 (Video), Track 2 (Indigo Audio), Track 3 (Emerald Subtitles), and **Save Version** CTA.
+   - Entitlement gating with Pro/Ultra Upgrade Modal.
+   - Asset Export Modal for downloading transformed videos or extracted MP3 audio.
+
+4. **Validation & Quality Assurance**
+   - Created comprehensive validation script [`scripts/validate-phase3.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/scripts/validate-phase3.ts): **23/23 PASSED (100%)**
+   - Ran `npx tsc --noEmit`: **100% PASSED (0 errors)**
+
+---
+
 ## 📌 Phase Progress Tracker
 
 - [x] **Phase 0**: External Services (Clerk Billing & ImageKit Integration)
@@ -156,8 +201,6 @@ This document tracks all completed phases, architectural implementations, and ve
 - [x] **Visual Rebrand**: Full DESIGN.md Dark Slate & Coral Rebrand
 - [x] **Phase 2**: Private Upload & Paginated Gallery
 - [x] **Phase 2.5**: ImageKit-Backed Versioning & Responsive Delivery
-- [ ] **Phase 3**: Non-Destructive Image & Video Editors
+- [x] **Phase 3**: Non-Destructive Image & Video Editors
 - [ ] **Phase 4**: Billing Gates & Entitlement Enforcement
 - [ ] **Phase 5**: End-to-End Verification & Release Readiness
-
-

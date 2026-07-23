@@ -6,10 +6,17 @@ export interface Recipe {
   format?: string;
   bgRemove?: boolean;
   watermark?: string;
+  textOverlay?: string;
+  colorOverlay?: string;
   blur?: number;
   rotate?: number;
   aspectRatio?: string | number;
   mute?: boolean;
+  startSeconds?: number;
+  endSeconds?: number;
+  duration?: number;
+  extractAudio?: boolean;
+  subtitleUrl?: string;
   [key: string]: unknown;
 }
 
@@ -39,6 +46,8 @@ const ALLOWED_FORMATS = [
   'gif',
   'mp4',
   'webm',
+  'mp3',
+  'aac',
 ];
 
 const ALLOWED_ROTATIONS = [0, 90, 180, 270, 360];
@@ -58,6 +67,9 @@ const ALLOWED_RECIPE_KEYS = new Set([
   'bg_remove',
   'backgroundRemoval',
   'watermark',
+  'textOverlay',
+  'text_overlay',
+  'colorOverlay',
   'blur',
   'b',
   'rotate',
@@ -65,6 +77,14 @@ const ALLOWED_RECIPE_KEYS = new Set([
   'aspectRatio',
   'ar',
   'mute',
+  'startSeconds',
+  'so',
+  'endSeconds',
+  'eo',
+  'duration',
+  'du',
+  'extractAudio',
+  'subtitleUrl',
 ]);
 
 /**
@@ -158,6 +178,26 @@ export function validateRecipe(recipe: unknown): ValidationResult {
     }
   }
 
+  // Validate Text Overlay
+  const textOverlayVal = rec.textOverlay ?? rec.text_overlay;
+  if (textOverlayVal !== undefined) {
+    if (typeof textOverlayVal !== 'string' || !textOverlayVal.trim()) {
+      errors.push('Text overlay must be a non-empty string.');
+    } else {
+      normalizedRecipe.textOverlay = textOverlayVal.trim();
+    }
+  }
+
+  // Validate Color Overlay
+  const colorOverlayVal = rec.colorOverlay;
+  if (colorOverlayVal !== undefined) {
+    if (typeof colorOverlayVal !== 'string' || !colorOverlayVal.trim()) {
+      errors.push('Color overlay must be a non-empty string.');
+    } else {
+      normalizedRecipe.colorOverlay = colorOverlayVal.trim();
+    }
+  }
+
   // Validate Blur
   const blurVal = rec.blur ?? rec.b;
   if (blurVal !== undefined) {
@@ -200,6 +240,56 @@ export function validateRecipe(recipe: unknown): ValidationResult {
     }
   }
 
+  // Validate StartSeconds
+  const startVal = rec.startSeconds ?? rec.so;
+  if (startVal !== undefined) {
+    if (typeof startVal !== 'number' || startVal < 0) {
+      errors.push('StartSeconds must be a non-negative number.');
+    } else {
+      normalizedRecipe.startSeconds = startVal;
+    }
+  }
+
+  // Validate EndSeconds
+  const endVal = rec.endSeconds ?? rec.eo;
+  if (endVal !== undefined) {
+    if (typeof endVal !== 'number' || endVal < 0) {
+      errors.push('EndSeconds must be a non-negative number.');
+    } else {
+      normalizedRecipe.endSeconds = endVal;
+    }
+  }
+
+  // Validate Duration
+  const durVal = rec.duration ?? rec.du;
+  if (durVal !== undefined) {
+    if (typeof durVal !== 'number' || durVal <= 0) {
+      errors.push('Duration must be a positive number.');
+    } else {
+      normalizedRecipe.duration = durVal;
+    }
+  }
+
+  // Validate ExtractAudio
+  const extractAudioVal = rec.extractAudio;
+  if (extractAudioVal !== undefined) {
+    if (typeof extractAudioVal !== 'boolean') {
+      errors.push('ExtractAudio must be a boolean.');
+    } else {
+      normalizedRecipe.extractAudio = extractAudioVal;
+    }
+  }
+
+  // Validate SubtitleUrl
+  const subtitleUrlVal = rec.subtitleUrl;
+  if (subtitleUrlVal !== undefined) {
+    if (typeof subtitleUrlVal !== 'string' || !subtitleUrlVal.trim()) {
+      errors.push('SubtitleUrl must be a non-empty string.');
+    } else {
+      normalizedRecipe.subtitleUrl = subtitleUrlVal.trim();
+    }
+  }
+
   if (errors.length > 0) {
     return { valid: false, errors };
   }
@@ -213,16 +303,28 @@ export function validateRecipe(recipe: unknown): ValidationResult {
 export function formatRecipeToTransformation(recipe: Recipe): string {
   const parts: string[] = [];
 
+  if (recipe.extractAudio) {
+    parts.push('f-mp3');
+  } else if (recipe.format) {
+    parts.push(`f-${recipe.format}`);
+  }
+
   if (recipe.width) parts.push(`w-${recipe.width}`);
   if (recipe.height) parts.push(`h-${recipe.height}`);
   if (recipe.crop) parts.push(`c-${recipe.crop}`);
   if (recipe.quality) parts.push(`q-${recipe.quality}`);
-  if (recipe.format) parts.push(`f-${recipe.format}`);
   if (recipe.bgRemove) parts.push(`e-bg-remove`);
   if (recipe.blur) parts.push(`bl-${recipe.blur}`);
   if (recipe.rotate !== undefined) parts.push(`rt-${recipe.rotate}`);
   if (recipe.aspectRatio) parts.push(`ar-${String(recipe.aspectRatio).replace(':', '-')}`);
+  if (recipe.mute) parts.push(`e-mute`);
+  if (recipe.startSeconds !== undefined) parts.push(`so-${recipe.startSeconds}`);
+  if (recipe.endSeconds !== undefined) parts.push(`eo-${recipe.endSeconds}`);
+  if (recipe.duration !== undefined) parts.push(`du-${recipe.duration}`);
   if (recipe.watermark) parts.push(`l-image,i-${recipe.watermark},l-end`);
+  if (recipe.textOverlay) parts.push(`l-text,i-${encodeURIComponent(recipe.textOverlay)},l-end`);
+  if (recipe.subtitleUrl) parts.push(`l-subtitles,i-${recipe.subtitleUrl},l-end`);
 
   return parts.join(',');
 }
+
