@@ -142,7 +142,7 @@ async function validatePhase5() {
   const testPath = '/users/user_test123/images/sample.jpg';
   const signedUrl = getSignedMediaUrl({ path: testPath, transformation: { width: 400 } });
   assert(signedUrl.includes('ik-s='), 'Signed URL contains ik-s HMAC signature');
-  assert(signedUrl.includes('ik-e='), 'Signed URL contains ik-e expiration timestamp');
+  assert(signedUrl.includes('ik-t='), 'Signed URL contains ik-t expiration timestamp');
   assert(signedUrl.includes('tr:w-400'), 'Signed URL contains transformation parameters');
 
   // ----------------------------------------------------

@@ -66,7 +66,7 @@ export function getImageKitUploadParams({
 }
 
 /**
- * Constructs signed ImageKit media delivery URLs with ik-e timestamp and ik-s HMAC-SHA1 signature.
+ * Constructs signed ImageKit media delivery URLs with ik-t timestamp and ik-s HMAC-SHA1 signature.
  */
 export function getSignedMediaUrl({
   path,
@@ -107,26 +107,25 @@ export function getSignedMediaUrl({
     }
   }
 
-  let relativePath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+  let signingPath = encodeURI(cleanPath.replace(/^\/+/, ''));
 
   if (trString) {
-    if (!relativePath.startsWith('/tr:')) {
-      relativePath = `/tr:${trString}${relativePath}`;
+    if (!signingPath.startsWith('tr:')) {
+      signingPath = `tr:${trString}/${signingPath}`;
     }
   }
 
   const now = Math.floor(Date.now() / 1000);
-  const ikE = expirySeconds > 1000000000 ? expirySeconds : now + expirySeconds;
+  const ikT = expirySeconds > 1000000000 ? expirySeconds : now + expirySeconds;
 
-  const stringToSign = relativePath + ikE;
+  const stringToSign = signingPath + ikT;
 
   const ikS = crypto
     .createHmac('sha1', privateKey)
     .update(stringToSign)
     .digest('hex');
 
-  const delimiter = relativePath.includes('?') ? '&' : '?';
-  return `${baseEndpoint}${relativePath}${delimiter}ik-e=${ikE}&ik-s=${ikS}`;
+  return `${baseEndpoint}/${signingPath}?ik-t=${ikT}&ik-s=${ikS}`;
 }
 
 export interface GetSignedResponsiveSrcSetOptions {

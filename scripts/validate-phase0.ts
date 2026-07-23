@@ -88,14 +88,14 @@ function runValidation() {
   assert(parsedUrl.origin === expectedBase.origin, `URL origin mismatch: ${parsedUrl.origin} vs ${expectedBase.origin}`);
   assert(parsedUrl.pathname.endsWith(testPath), `URL path mismatch: ${parsedUrl.pathname} does not end with ${testPath}`);
   
-  const ikEParam = parsedUrl.searchParams.get('ik-e');
+  const ikTParam = parsedUrl.searchParams.get('ik-t');
   const ikSParam = parsedUrl.searchParams.get('ik-s');
 
-  assert(Boolean(ikEParam), 'Signed URL must contain ik-e query parameter');
+  assert(Boolean(ikTParam), 'Signed URL must contain ik-t query parameter');
   assert(Boolean(ikSParam), 'Signed URL must contain ik-s query parameter');
 
   // Verify HMAC-SHA1 signature correctness
-  const expectedStringToSign = `${testPath}${ikEParam}`;
+  const expectedStringToSign = `${encodeURI(testPath.slice(1))}${ikTParam}`;
   const expectedSignature = crypto
     .createHmac('sha1', process.env.IMAGEKIT_PRIVATE_KEY!)
     .update(expectedStringToSign)
