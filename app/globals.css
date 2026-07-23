@@ -30,3 +30,81 @@ body {
   font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
 }
 
+/* ==========================================================================
+   Clerk Pricing Table Layout & High-Contrast Dark Overrides
+   ========================================================================== */
+
+/* Enforce 3-column side-by-side card grid layout on desktop */
+#clerk-pricing-table-container .cl-pricingTableCards,
+.cl-pricingTableCards {
+  display: grid !important;
+  grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  gap: 1.5rem !important;
+  width: 100% !important;
+}
+
+@media (min-width: 768px) {
+  #clerk-pricing-table-container .cl-pricingTableCards,
+  .cl-pricingTableCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Base high contrast text for everything inside pricing table */
+#clerk-pricing-table-container p,
+#clerk-pricing-table-container span,
+#clerk-pricing-table-container li,
+#clerk-pricing-table-container label,
+#clerk-pricing-table-container td,
+#clerk-pricing-table-container th {
+  color: #e2e8f0 !important; /* Crisp slate-200 */
+}
+
+/* Headings, Titles, Prices & Amounts */
+#clerk-pricing-table-container h1,
+#clerk-pricing-table-container h2,
+#clerk-pricing-table-container h3,
+#clerk-pricing-table-container h4,
+#clerk-pricing-table-container [class*="title"],
+#clerk-pricing-table-container [class*="Title"],
+#clerk-pricing-table-container [class*="price"],
+#clerk-pricing-table-container [class*="Price"],
+#clerk-pricing-table-container [class*="amount"],
+#clerk-pricing-table-container [class*="Amount"] {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* Checkmarks and feature icons */
+#clerk-pricing-table-container svg {
+  color: #ff6b4a !important;
+  stroke: #ff6b4a !important;
+}
+
+/* Secondary muted text (e.g. /month, Billed annually) */
+#clerk-pricing-table-container [class*="muted"],
+#clerk-pricing-table-container [class*="period"],
+#clerk-pricing-table-container [class*="Period"],
+#clerk-pricing-table-container [class*="hint"] {
+  color: #94a3b8 !important;
+}
+
+/* Primary Coral Buttons */
+#clerk-pricing-table-container button,
+#clerk-pricing-table-container [class*="button"],
+#clerk-pricing-table-container [class*="Button"] {
+  background-color: #ff6b4a !important;
+  color: #020617 !important;
+  font-weight: 800 !important;
+}
+
+#clerk-pricing-table-container button *,
+#clerk-pricing-table-container [class*="button"] *,
+#clerk-pricing-table-container [class*="Button"] * {
+  color: #020617 !important;
+}
+
+#clerk-pricing-table-container button:hover,
+#clerk-pricing-table-container [class*="button"]:hover {
+  background-color: #ff856b !important;
+}

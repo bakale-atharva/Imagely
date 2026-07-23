@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import UploadModal from "@/components/UploadModal";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+
+import { useSearchParams } from "next/navigation";
 
 type MediaTypeFilter = "all" | "image" | "video";
 
@@ -36,10 +38,17 @@ function AssetThumbnail({ path, fallback }: { path: string, fallback: React.Reac
   );
 }
 
-export default function GalleryPage() {
+function GalleryContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<MediaTypeFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (searchParams?.get("upload") === "true") {
+      setIsUploadModalOpen(true);
+    }
+  }, [searchParams]);
 
   const paginatedResult = useQuery(api.assetFamilies.listPaginatedAssetFamilies, {
     mediaKind: activeTab === "all" ? undefined : activeTab,
@@ -289,6 +298,14 @@ export default function GalleryPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function GalleryPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 bg-slate-950 min-h-screen" />}>
+      <GalleryContent />
+    </Suspense>
   );
 }
 

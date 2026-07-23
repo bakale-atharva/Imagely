@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Recipe, ValidationResult, validateRecipe, formatRecipeToTransformation } from './recipe';
+import { Recipe, validateRecipe, formatRecipeToTransformation } from './recipe';
 
 export * from './recipe';
 

@@ -68,11 +68,11 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       const formData = new FormData();
       formData.append("file", file);
       formData.append("fileName", file.name);
-      formData.append("folder", "/imagely");
+      formData.append("folder", authData.folder || "/imagely");
       formData.append("token", authData.token);
       formData.append("signature", authData.signature);
       formData.append("expire", authData.expire.toString());
-      formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "");
+      formData.append("publicKey", authData.publicKey || process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "");
       formData.append("useUniqueFileName", "true");
       formData.append("isPrivateFile", "true");
 
@@ -86,15 +86,33 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
         }
       };
 
-      const uploadPromise = new Promise<any>((resolve, reject) => {
+      interface ImageKitUploadResponse {
+        filePath: string;
+        fileId: string;
+        width?: number;
+        height?: number;
+      }
+
+      const uploadPromise = new Promise<ImageKitUploadResponse>((resolve, reject) => {
         xhr.onload = () => {
           if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch {
+              reject(new Error("Failed to parse upload response"));
+            }
           } else {
-            reject(new Error("Upload failed"));
+            let errorMsg = `Upload failed (${xhr.status})`;
+            try {
+              const resObj = JSON.parse(xhr.responseText);
+              if (resObj.message) errorMsg = resObj.message;
+            } catch {
+              if (xhr.responseText) errorMsg = xhr.responseText;
+            }
+            reject(new Error(errorMsg));
           }
         };
-        xhr.onerror = () => reject(new Error("Upload failed"));
+        xhr.onerror = () => reject(new Error("Network error during upload. Please check your connection."));
         xhr.send(formData);
       });
 
@@ -119,9 +137,10 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       }
 
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An error occurred during upload.");
+      const errMsg = err instanceof Error ? err.message : "An error occurred during upload.";
+      setError(errMsg);
     } finally {
       setUploading(false);
       setProgress(0);
@@ -144,7 +163,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
-  }, []);
+  }, [handleFileSelect]);
 
   if (!isOpen) return null;
 

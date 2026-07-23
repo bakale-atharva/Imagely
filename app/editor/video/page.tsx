@@ -79,12 +79,6 @@ function VideoEditorContent() {
 
   const [selectedVersionId, setSelectedVersionId] = useState<Id<"assetVersions"> | null>(null);
 
-  useEffect(() => {
-    if (versions.length > 0 && !selectedVersionId) {
-      setSelectedVersionId(versions[versions.length - 1]._id);
-    }
-  }, [versions, selectedVersionId]);
-
   const selectedVersion = useMemo(() => {
     if (!versions || versions.length === 0) return null;
     return (
@@ -96,10 +90,12 @@ function VideoEditorContent() {
   // Recipe state
   const [recipe, setRecipe] = useState<RecipeState>(DEFAULT_RECIPE);
   const [hasUnsavedEdits, setHasUnsavedEdits] = useState(false);
+  const loadedVersionIdRef = useRef<string | null>(null);
 
   // Load recipe from selected version if available
   useEffect(() => {
-    if (selectedVersion) {
+    if (selectedVersion && selectedVersion._id !== loadedVersionIdRef.current) {
+      loadedVersionIdRef.current = selectedVersion._id;
       const existingRecipe = (selectedVersion.recipe as Partial<RecipeState>) || {};
       setRecipe({
         startSeconds: existingRecipe.startSeconds ?? 0,
@@ -148,9 +144,9 @@ function VideoEditorContent() {
     if (!selectedVersion || !family) return;
 
     let isMounted = true;
-    setIsProcessing(true);
 
     const fetchSignedUrl = async () => {
+      if (isMounted) setIsProcessing(true);
       try {
         const res = await fetch("/api/media/sign-url", {
           method: "POST",
@@ -327,8 +323,10 @@ function VideoEditorContent() {
     return `${m < 10 ? "0" + m : m}:${s < 10 ? "0" + s : s}`;
   };
 
+  const now = useMemo(() => Date.now(), []);
+
   const formatTimeAgo = (ts: number) => {
-    const diff = Date.now() - ts;
+    const diff = now - ts;
     const mins = Math.floor(diff / 60000);
     if (mins < 60) return `${mins}m ago`;
     const hours = Math.floor(mins / 60);
