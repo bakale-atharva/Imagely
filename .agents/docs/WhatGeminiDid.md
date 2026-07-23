@@ -192,6 +192,39 @@ This document tracks all completed phases, architectural implementations, and ve
    - Created comprehensive validation script [`scripts/validate-phase3.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/scripts/validate-phase3.ts): **23/23 PASSED (100%)**
    - Ran `npx tsc --noEmit`: **100% PASSED (0 errors)**
 
+
+---
+
+## 📌 Phase 4 — Billing Gates & Entitlement Enforcement
+
+**Status**: ✅ Completed & Verified
+
+### Key Deliverables & Architectural Achievements
+
+1. **Reusable Server Entitlement Guard (`lib/entitlements.ts`)**
+   - Built [`lib/entitlements.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/lib/entitlements.ts) mapping recipes to Clerk feature entitlement slugs:
+     - `basic_editor`: Standard resize, crop, quality, format, trim, mute.
+     - `image_ai`: AI background removal (`bgRemove`).
+     - `advanced_image`: Text overlays, image watermarks, color tints, blur filters.
+     - `advanced_video`: Aspect ratio presets, rotation transforms, video watermarks.
+     - `audio_extraction`: MP3 audio track extraction from video assets (`extractAudio`).
+     - `subtitle_overlay`: Subtitle file overlays & captions (`subtitleUrl`).
+   - Created `checkRecipeEntitlements(has, recipe, mediaKind)` to evaluate requested operations against active user session entitlements.
+
+2. **Server-Side Route Entitlement Enforcement**
+   - **Signed URL Endpoint** ([`app/api/media/sign-url/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/sign-url/route.ts)): Evaluates server-side entitlement checks against `recipe` before generating signed media URLs. Responds with `403 Forbidden` if unentitled features are requested.
+   - **Export Endpoint** ([`app/api/media/export/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/export/route.ts)): Enforces entitlement verification before returning signed export download links (`ik-attachment=true`).
+   - **Version Creation Guard** ([`app/api/media/version-create/route.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/app/api/media/version-create/route.ts)): Dedicated server endpoint verifying feature entitlements and recipe validity prior to materializing new immutable database versions in Convex.
+
+3. **Client-Side Entitlement UI & Surfaces**
+   - **Pricing Page** ([`app/pricing/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/pricing/page.tsx)): Integrated Clerk `<PricingTable />` container with active plan detection (`has({ plan: 'pro' })`, `has({ plan: 'ultra' })`, Free), feature entitlement checklists, and smooth checkout navigation.
+   - **Account Page** ([`app/account/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/account/page.tsx)): Built dynamic active feature entitlement matrix displaying real-time unlocked (`✓`) vs locked (`🔒`) states for all 6 feature slugs based on `useAuth().has({ feature })`.
+   - **Image & Video Studio Editors** ([`app/editor/image/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/editor/image/page.tsx) & [`app/editor/video/page.tsx`](file:///d:/Coding/JavaScript/Projects/Imagely/app/editor/video/page.tsx)): Updated version creation and export actions to verify server entitlements via `/api/media/version-create` and open `UpgradeModal` with specific feature name on `403 Forbidden` responses.
+
+4. **Validation & Quality Assurance**
+   - Created comprehensive Phase 4 validation suite [`scripts/validate-phase4.ts`](file:///d:/Coding/JavaScript/Projects/Imagely/scripts/validate-phase4.ts): **100% PASSED**
+   - Executed `npx tsc --noEmit`: **100% PASSED (0 errors)**
+
 ---
 
 ## 📌 Phase Progress Tracker
@@ -202,5 +235,6 @@ This document tracks all completed phases, architectural implementations, and ve
 - [x] **Phase 2**: Private Upload & Paginated Gallery
 - [x] **Phase 2.5**: ImageKit-Backed Versioning & Responsive Delivery
 - [x] **Phase 3**: Non-Destructive Image & Video Editors
-- [ ] **Phase 4**: Billing Gates & Entitlement Enforcement
+- [x] **Phase 4**: Billing Gates & Entitlement Enforcement
 - [ ] **Phase 5**: End-to-End Verification & Release Readiness
+

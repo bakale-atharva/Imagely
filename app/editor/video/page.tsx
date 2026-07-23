@@ -249,6 +249,29 @@ function VideoEditorContent() {
   const handleCreateVersion = async () => {
     if (!family || !selectedVersion) return;
     try {
+      const authRes = await fetch("/api/media/version-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipe,
+          imageKitPath: selectedVersion.imageKitPath,
+          mediaKind: "video",
+        }),
+      });
+
+      if (!authRes.ok) {
+        const errData = await authRes.json();
+        if (authRes.status === 403) {
+          const isUltraNeeded = errData.missingFeatures?.includes("audio_extraction") || errData.missingFeatures?.includes("subtitle_overlay");
+          setUpgradeModal({
+            isOpen: true,
+            requiredTier: isUltraNeeded ? "ULTRA" : "PRO",
+            featureName: errData.missingFeatures?.join(", ") || "Advanced Video Features",
+          });
+          return;
+        }
+      }
+
       const newVersionId = await createVersion({
         familyId: family._id,
         parentVersionId: selectedVersion._id,

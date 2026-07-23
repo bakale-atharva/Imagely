@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getSignedMediaUrl } from '@/lib/imagekit';
 import { validateRecipe } from '@/lib/recipe';
+import { checkRecipeEntitlements } from '@/lib/entitlements';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, has } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { path, recipe, filename, format } = body;
+    const { path, recipe, filename, format, mediaKind } = body;
 
     if (!path || typeof path !== 'string') {
       return NextResponse.json({ error: 'Path is required' }, { status: 400 });
@@ -23,8 +24,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Path does not belong to user' }, { status: 403 });
     }
 
-    // If recipe supplied, validate it server-side
-    let transformation: string | undefined = undefined;
+    // Server-side entitlement check
+    if (recipe && has) {
+      const entitlementCheck = checkRecipeEntitlements(has, recipe, mediaKind);
+      if (!entitlementCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Forbidden: Missing required feature entitlement (${entitlementCheck.missingFeatures.join(', ')})`,
+            missingFeatures: entitlementCheck.missingFeatures,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    // If recipe supplied, validate structure server-side
     if (recipe) {
       const valResult = validateRecipe(recipe);
       if (!valResult.valid) {

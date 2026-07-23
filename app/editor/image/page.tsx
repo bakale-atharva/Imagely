@@ -226,6 +226,26 @@ function ImageEditorContent() {
     if (!family || !selectedVersion) return;
     setIsCreatingVersion(true);
     try {
+      // Call server entitlement endpoint before creating version
+      const authRes = await fetch("/api/media/version-create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipe: currentRecipe,
+          imageKitPath: selectedVersion.imageKitPath,
+          mediaKind: "image",
+        }),
+      });
+
+      if (!authRes.ok) {
+        const errData = await authRes.json();
+        if (authRes.status === 403) {
+          setUpgradeFeatureName(errData.missingFeatures?.join(", ") || "Advanced Image Tools");
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+
       const newVersionId = await createVersion({
         familyId: family._id,
         parentVersionId: selectedVersion._id,

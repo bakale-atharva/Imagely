@@ -4,7 +4,7 @@ import { useUser, useAuth, SignInButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default function AccountPage() {
-  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isAuthLoaded, isSignedIn, has } = useAuth();
   const { isLoaded: isUserLoaded, user } = useUser();
 
   if (!isAuthLoaded || !isUserLoaded) {
@@ -12,7 +12,7 @@ export default function AccountPage() {
       <main className="flex-1 min-h-[calc(100vh-64px)] bg-slate-950 flex items-center justify-center p-12">
         <div className="flex items-center gap-3 text-slate-400 text-sm">
           <div className="w-4 h-4 rounded-full border-2 border-[#ff6b4a] border-t-transparent animate-spin" />
-          <span>Loading user profile...</span>
+          <span>Loading user profile & feature entitlements...</span>
         </div>
       </main>
     );
@@ -33,7 +33,7 @@ export default function AccountPage() {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Sign In to Access Account Settings</h2>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Please authenticate to view your profile details, active subscriptions, and studio preferences.
+              Please authenticate to view your profile details, active subscriptions, and feature entitlement status.
             </p>
           </div>
           <SignInButton mode="modal">
@@ -49,12 +49,72 @@ export default function AccountPage() {
     );
   }
 
+  // Determine current active plan
+  const isPro = has?.({ plan: "pro" });
+  const isUltra = has?.({ plan: "ultra" });
+  const currentPlan = isUltra ? "Ultra" : isPro ? "Pro" : "Free";
+
+  // Feature entitlement list
+  const featureList = [
+    {
+      slug: "basic_editor",
+      title: "Basic Image & Video Editor",
+      desc: "Standard resizing, cropping, quality, format conversion & trimming",
+      enabled: has?.({ feature: "basic_editor" }) ?? true,
+      tier: "Free+",
+    },
+    {
+      slug: "image_ai",
+      title: "AI Image Manipulation",
+      desc: "AI background removal and transparent PNG generation",
+      enabled: has?.({ feature: "image_ai" }) ?? false,
+      tier: "Pro+",
+    },
+    {
+      slug: "advanced_image",
+      title: "Advanced Image Filters & Overlays",
+      desc: "Text overlays, image watermarks, color tints, and Gaussian blur",
+      enabled: has?.({ feature: "advanced_image" }) ?? false,
+      tier: "Pro+",
+    },
+    {
+      slug: "advanced_video",
+      title: "Advanced Video Tools",
+      desc: "Aspect ratio conversions, rotation transforms, & watermark overlays",
+      enabled: has?.({ feature: "advanced_video" }) ?? false,
+      tier: "Pro+",
+    },
+    {
+      slug: "audio_extraction",
+      title: "Audio Extraction",
+      desc: "Extract high-quality MP3 audio tracks directly from video assets",
+      enabled: has?.({ feature: "audio_extraction" }) ?? false,
+      tier: "Ultra",
+    },
+    {
+      slug: "subtitle_overlay",
+      title: "Subtitle File Overlay",
+      desc: "Burn custom subtitle tracks and captions into video output",
+      enabled: has?.({ feature: "subtitle_overlay" }) ?? false,
+      tier: "Ultra",
+    },
+  ];
+
   return (
     <main id="account-container" className="flex-1 min-h-[calc(100vh-64px)] bg-slate-950 p-6 md:p-12 max-w-5xl mx-auto w-full space-y-8">
       {/* Page Header */}
-      <div className="border-b border-slate-800 pb-6">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">Account & Studio Settings</h1>
-        <p className="text-sm text-slate-400 mt-1">Manage your credentials, subscription plan, and API access keys.</p>
+      <div className="border-b border-slate-800 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100">Account & Feature Entitlements</h1>
+          <p className="text-sm text-slate-400 mt-1">Manage your credentials, active subscription plan, and media studio feature gates.</p>
+        </div>
+        <Link
+          href="/pricing"
+          id="account-header-upgrade-btn"
+          className="px-4 py-2 rounded-xl text-xs font-bold bg-[#ff6b4a] hover:bg-[#ff856b] text-slate-950 transition-all shadow-md shadow-[#ff6b4a]/20 shrink-0 self-start md:self-auto cursor-pointer"
+        >
+          Manage / Upgrade Subscription
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -90,9 +150,9 @@ export default function AccountPage() {
               </p>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#ff6b4a]/10 border border-[#ff6b4a]/30 text-[#ff6b4a] text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#ff6b4a]/10 border border-[#ff6b4a]/30 text-[#ff6b4a] text-xs font-bold uppercase tracking-wider">
               <span className="w-2 h-2 rounded-full bg-[#ff6b4a]" />
-              Active Creator Plan
+              {currentPlan} Subscription Tier
             </div>
           </div>
 
@@ -110,31 +170,66 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Quick Settings & Entitlements Grid */}
+        {/* Feature Entitlements & Quick Actions Grid */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Storage Usage Card */}
-          <div
-            id="account-storage-card"
-            className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl space-y-4"
-          >
+          {/* Feature Entitlement Matrix */}
+          <div id="account-entitlements-card" className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 backdrop-blur-xl space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#ff6b4a]/10 border border-[#ff6b4a]/20 flex items-center justify-center text-[#ff6b4a]">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-200">Cloud Media Storage</h3>
-                  <p className="text-xs text-slate-400">12.4 MB of 5.0 GB used</p>
-                </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-200">Active Feature Entitlements</h3>
+                <p className="text-xs text-slate-400">Features unlocked by your current Clerk subscription plan.</p>
               </div>
-              <span className="text-xs font-mono font-semibold text-[#ff6b4a]">0.2%</span>
+              <span className="text-xs font-mono text-[#ff6b4a] font-bold">
+                {featureList.filter((f) => f.enabled).length} / {featureList.length} Unlocked
+              </span>
             </div>
 
-            {/* Progress Bar with Coral Indicator */}
-            <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#ff6b4a] to-[#ff856b] w-[0.2%]" />
+            <div className="grid grid-cols-1 gap-3 pt-2">
+              {featureList.map((feature) => (
+                <div
+                  key={feature.slug}
+                  id={`entitlement-item-${feature.slug}`}
+                  className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 transition-colors ${
+                    feature.enabled
+                      ? "bg-slate-900/80 border-slate-800"
+                      : "bg-slate-950/60 border-slate-800/80 opacity-75"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0 ${
+                        feature.enabled
+                          ? "bg-[#ff6b4a]/20 text-[#ff6b4a] border border-[#ff6b4a]/30"
+                          : "bg-slate-800 text-slate-500 border border-slate-700"
+                      }`}
+                    >
+                      {feature.enabled ? "✓" : "🔒"}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-200">{feature.title}</span>
+                        <span className="text-[10px] font-mono text-slate-500">(`{feature.slug}`)</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-tight">{feature.desc}</p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    {feature.enabled ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Unlocked
+                      </span>
+                    ) : (
+                      <Link
+                        href="/pricing"
+                        className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ff6b4a]/10 hover:bg-[#ff6b4a]/20 text-[#ff6b4a] border border-[#ff6b4a]/30 transition-colors"
+                      >
+                        Upgrade ({feature.tier})
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -175,47 +270,9 @@ export default function AccountPage() {
                 <p className="text-xs text-slate-400">Password, 2FA, & sessions</p>
               </div>
             </button>
-
-            <button
-              id="account-api-keys-btn"
-              onClick={() => alert("API keys feature placeholder.")}
-              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-[#ff6b4a]/50 transition-all flex items-center gap-4 text-left group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:text-[#ff6b4a] group-hover:scale-110 transition-transform">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-200 group-hover:text-[#ff6b4a] transition-colors">
-                  API Secret Keys
-                </h4>
-                <p className="text-xs text-slate-400">Developer tokens & webhooks</p>
-              </div>
-            </button>
-
-            <button
-              id="account-preferences-btn"
-              onClick={() => alert("Preferences saved.")}
-              className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-[#ff6b4a]/50 transition-all flex items-center gap-4 text-left group cursor-pointer"
-            >
-              <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:text-[#ff6b4a] group-hover:scale-110 transition-transform">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-slate-200 group-hover:text-[#ff6b4a] transition-colors">
-                  Studio Preferences
-                </h4>
-                <p className="text-xs text-slate-400">Default canvas & export settings</p>
-              </div>
-            </button>
           </div>
         </div>
       </div>
     </main>
   );
 }
-

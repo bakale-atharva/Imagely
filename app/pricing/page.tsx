@@ -4,8 +4,12 @@ import { PricingTable, useAuth, SignUpButton } from "@clerk/nextjs";
 import { useState } from "react";
 
 export default function PricingPage() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, has } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+
+  const isPro = has?.({ plan: "pro" });
+  const isUltra = has?.({ plan: "ultra" });
+  const isFree = !isPro && !isUltra;
 
   const plans = [
     {
@@ -13,72 +17,92 @@ export default function PricingPage() {
       name: "Starter Free",
       priceMonthly: "$0",
       priceYearly: "$0",
-      badge: "Get Started",
-      badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+      badge: isFree ? "Active Plan" : "Basic",
+      badgeColor: isFree
+        ? "bg-[#ff6b4a]/20 text-[#ff6b4a] border-[#ff6b4a]/40 font-bold"
+        : "bg-slate-800 text-slate-300 border-slate-700",
       description: "Essential tools for personal image editing & asset storing.",
       features: [
         "Up to 50 Image Asset Uploads",
-        "Standard Image Editing Canvas",
-        "Original Version Lineage",
+        "Standard Image & Video Editing Canvas",
+        "Original Version Lineage & History",
         "Community Support",
       ],
-      cta: "Current Free Plan",
-      ctaStyle: "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700",
+      current: isFree,
+      cta: isFree ? "Current Free Plan" : "Downgrade to Free",
+      ctaStyle: isFree
+        ? "bg-slate-800 text-slate-400 border border-slate-700 cursor-default"
+        : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700",
     },
     {
       id: "pro",
       name: "Creator Pro",
-      priceMonthly: "$19",
-      priceYearly: "$15",
-      badge: "Most Popular",
+      priceMonthly: "$15",
+      priceYearly: "$12",
+      badge: isPro ? "Active Plan" : "Most Popular",
       badgeColor: "bg-[#ff6b4a] text-slate-950 font-bold border-[#ff6b4a] shadow-md shadow-[#ff6b4a]/20",
-      description: "Unlocks full AI Super Resolution, video timeline, & versioning.",
+      description: "Unlocks AI background removal, advanced image filters & video editing.",
       features: [
-        "Unlimited Asset Uploads & Cloud Storage",
-        "Full Image & Video Editing Suite",
-        "AI Background Removal & 4x Upscaling",
+        "Unlimited Private Asset Uploads",
+        "AI Background Removal (`image_ai`)",
+        "Advanced Overlays & Filters (`advanced_image`)",
+        "Aspect Ratio & Video Transforms (`advanced_video`)",
         "Unlimited Version Lineage & Timeline",
-        "Priority Rendering Queue",
       ],
-      cta: "Upgrade to Pro",
-      ctaStyle: "bg-[#ff6b4a] hover:bg-[#ff856b] text-slate-950 font-extrabold shadow-lg shadow-[#ff6b4a]/25",
-      highlight: true,
+      current: isPro,
+      cta: isPro ? "Current Active Plan" : "Upgrade to Pro",
+      ctaStyle: isPro
+        ? "bg-[#ff6b4a]/20 text-[#ff6b4a] border border-[#ff6b4a]/40 font-bold cursor-default"
+        : "bg-[#ff6b4a] hover:bg-[#ff856b] text-slate-950 font-extrabold shadow-lg shadow-[#ff6b4a]/25",
+      highlight: !isUltra,
     },
     {
       id: "ultra",
       name: "Studio Ultra",
-      priceMonthly: "$49",
-      priceYearly: "$39",
-      badge: "Ultimate AI",
-      badgeColor: "bg-[#ff6b4a]/20 text-[#ff6b4a] border-[#ff6b4a]/40",
-      description: "For teams, studios, and high-frequency media processing.",
+      priceMonthly: "$30",
+      priceYearly: "$24",
+      badge: isUltra ? "Active Plan" : "Ultimate AI",
+      badgeColor: isUltra
+        ? "bg-[#ff6b4a] text-slate-950 font-bold border-[#ff6b4a]"
+        : "bg-[#ff6b4a]/20 text-[#ff6b4a] border-[#ff6b4a]/40",
+      description: "Full studio access including MP3 audio extraction & subtitle overlays.",
       features: [
         "Everything in Creator Pro",
-        "4K Video Rendering Output",
-        "Custom AI Model Tuning & Presets",
-        "Team Workspace Collaboration",
-        "Dedicated 24/7 Priority Support",
+        "MP3 Audio Extraction (`audio_extraction`)",
+        "Custom Subtitle File Overlays (`subtitle_overlay`)",
+        "High-Resolution Export Queue",
+        "Priority 24/7 Support",
       ],
-      cta: "Get Studio Ultra",
-      ctaStyle: "bg-slate-800 hover:bg-slate-700 text-[#ff6b4a] border border-[#ff6b4a]/50 shadow-md",
+      current: isUltra,
+      cta: isUltra ? "Current Active Plan" : "Get Studio Ultra",
+      ctaStyle: isUltra
+        ? "bg-[#ff6b4a]/20 text-[#ff6b4a] border border-[#ff6b4a]/40 font-bold cursor-default"
+        : "bg-slate-800 hover:bg-slate-700 text-[#ff6b4a] border border-[#ff6b4a]/50 shadow-md",
     },
   ];
+
+  const scrollToPricingTable = () => {
+    const el = document.getElementById("clerk-pricing-table-container");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <main id="pricing-container" className="flex-1 min-h-[calc(100vh-64px)] bg-slate-950 p-6 md:p-12 max-w-7xl mx-auto w-full space-y-12">
       {/* Header Banner */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#ff6b4a]/10 border border-[#ff6b4a]/25 text-[#ff6b4a] text-xs font-semibold uppercase tracking-wider">
-          Simple & Transparent Pricing
+          Simple & Transparent Billing
         </div>
         <h1 className="text-4xl md:text-5xl font-extrabold text-slate-100 tracking-tight">
           Supercharge Your Workflow with{" "}
           <span className="text-[#ff6b4a]">
-            Imagely Pro
+            Imagely Tiers
           </span>
         </h1>
         <p className="text-slate-400 text-base md:text-lg leading-relaxed">
-          Choose the plan that fits your creative scale. Upgrade or downgrade anytime.
+          Choose the entitlement plan that fits your studio needs. Powered securely by Clerk Billing.
         </p>
 
         {/* Monthly / Yearly Toggle */}
@@ -139,7 +163,7 @@ export default function PricingPage() {
 
               {/* Feature Checklist */}
               <div className="space-y-3 pt-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Features Included:</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Feature Entitlements:</span>
                 <ul className="space-y-2.5">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
@@ -167,6 +191,7 @@ export default function PricingPage() {
               ) : (
                 <button
                   id={`plan-select-${plan.id}`}
+                  onClick={plan.current ? undefined : scrollToPricingTable}
                   className={`w-full py-3 rounded-xl font-bold text-xs transition-all cursor-pointer ${plan.ctaStyle}`}
                 >
                   {plan.cta}
@@ -177,11 +202,16 @@ export default function PricingPage() {
         ))}
       </div>
 
-      {/* Clerk Native Pricing Table Integration (if configured) */}
-      <div id="clerk-pricing-table-container" className="pt-8 border-t border-slate-800">
-        <h2 className="text-center text-sm font-bold uppercase tracking-wider text-slate-400 mb-6">
-          Native Subscription Checkout & Management
-        </h2>
+      {/* Clerk Native Pricing Table Integration */}
+      <div id="clerk-pricing-table-container" className="pt-8 border-t border-slate-800 space-y-4">
+        <div className="text-center space-y-1">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+            Native Clerk Subscription Checkout & Management
+          </h2>
+          <p className="text-xs text-slate-500">
+            Select a plan below to upgrade, downgrade, or update payment credentials securely via Clerk.
+          </p>
+        </div>
         <div className="bg-slate-900/40 rounded-3xl p-6 border border-slate-800">
           <PricingTable />
         </div>
@@ -189,4 +219,3 @@ export default function PricingPage() {
     </main>
   );
 }
-

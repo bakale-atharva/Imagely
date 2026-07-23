@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getSignedMediaUrl, getSignedCanvasUrl, getSignedResponsiveSrcSet } from '@/lib/imagekit';
+import { checkRecipeEntitlements } from '@/lib/entitlements';
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, has } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
-    const { path, recipe, width, widths, maxDimensions } = body;
+    const { path, recipe, width, widths, maxDimensions, mediaKind } = body;
 
     if (!path || typeof path !== 'string') {
       return NextResponse.json({ error: 'path is required and must be a string' }, { status: 400 });
@@ -21,19 +22,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Path does not belong to authenticated user' }, { status: 403 });
     }
 
+    // Verify feature entitlements server-side
+    if (recipe && has) {
+      const entitlementCheck = checkRecipeEntitlements(has, recipe, mediaKind);
+      if (!entitlementCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Forbidden: Missing required feature entitlement (${entitlementCheck.missingFeatures.join(', ')})`,
+            missingFeatures: entitlementCheck.missingFeatures,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     let url = '';
     let srcset: string | undefined = undefined;
 
     if (maxDimensions && typeof maxDimensions === 'object' && maxDimensions.width) {
-      // Use getSignedCanvasUrl
       url = getSignedCanvasUrl({
         path,
         recipe,
         containerWidth: width,
-        dpr: 1, // You could also accept dpr in the request if needed
+        dpr: 1,
         maxDimensions,
       });
-      // Optionally provide srcset if widths are provided
       if (widths && Array.isArray(widths)) {
         srcset = getSignedResponsiveSrcSet({
           path,
@@ -42,17 +55,11 @@ export async function POST(req: NextRequest) {
         });
       }
     } else {
-      // General media URL
       let transformation: string | any = recipe;
       if (width) {
         transformation = `w-${width},q-auto,f-auto`;
-        if (recipe) {
-          // If you want to merge string and recipe you could, but we have helper for srcset
-        }
       }
       
-      // Let's use getSignedCanvasUrl if maxDimensions is provided, otherwise simple signed url
-      // Actually, if we just want to return responsive srcset and url:
       if (widths && Array.isArray(widths)) {
         srcset = getSignedResponsiveSrcSet({
           path,
